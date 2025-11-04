@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoramento de Temperatura</title>
+<style>
+body { font-family: Arial; text-align:center; margin-top:40px; background:#f2f2f2; }
+#sensor { margin-top:40px; padding:25px; border:2px solid #333; border-radius:12px; background:white; box-shadow:2px 2px 5px gray; display:inline-block; }
+.temp { font-size:48px; font-weight:bold; margin:10px; }
+.led { display:inline-block; width:40px; height:40px; border-radius:50%; margin:10px; opacity:0.3; border:1px solid black; }
+.azul { background:rgb(0, 255, 89); } .verde { background:rgb(238, 255, 3); } .vermelho { background:red; }
+</style>
+</head>
+<body>
+<h1>Monitoramento de Temperatura</h1>
+
+<div id="sensor">
+<h2>Temperatura Atual</h2>
+<div class="temp" id="temp">-- °C</div>
+<div>
+<div class="led azul"></div>
+<div class="led verde"></div>
+<div class="led vermelho"></div>
+</div>
+<p id="estado">Aguardando dados...</p>
+</div>
+
+<script>
+async function atualizarTemperatura(){
+  try{
+    const resp = await fetch('/temperatura');
+    const data = await resp.json();
+    const temp = parseFloat(data.temperatura);
+    const tempDiv = document.getElementById('temp');
+    const estado = document.getElementById('estado');
+    const leds = document.querySelectorAll('.led');
+    leds.forEach(l=>l.style.opacity=0.3);
+
+    if(isNaN(temp)){
+      tempDiv.innerText="-- °C";
+      estado.innerText="Sem leitura do sensor";
+      return;
+    }
+
+    tempDiv.innerText=temp.toFixed(1)+" °C";
+
+    let alertaDisparado = false;
+
+if(temp<20){ 
+    document.querySelector('.azul').style.opacity=1; 
+    estado.innerText="Temperatura fria"; 
+    if(!alertaDisparado){
+        document.body.style.backgroundColor = "#87cefa"; // azul claro
+        alertaDisparado = true;
+        setTimeout(()=>{ document.body.style.backgroundColor="#f2f2f2"; alertaDisparado=false; }, 3000);
+    }
+} else if(temp>=20 && temp<30){ 
+    document.querySelector('.verde').style.opacity=1; 
+    estado.innerText="Temperatura normal"; 
+} else { 
+    document.querySelector('.vermelho').style.opacity=1; 
+    estado.innerText="Temperatura alta"; 
+    if(!alertaDisparado){
+        document.body.style.backgroundColor = "#ff6347"; // vermelho claro
+        alertaDisparado = true;
+        setTimeout(()=>{ document.body.style.backgroundColor="#f2f2f2"; alertaDisparado=false; }, 3000);
+    }
+}
+
+  }catch(e){ console.error("Erro ao obter temperatura:",e); }
+}
+
+setInterval(atualizarTemperatura,2000);
+atualizarTemperatura();
+</script>
+</body>
+</html>
